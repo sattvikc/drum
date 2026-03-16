@@ -27,6 +27,8 @@ void TransportClock::start() noexcept {
 
 void TransportClock::stop() noexcept {
   running = false;
+  positionInBeats = 0.0;
+  currentStep = 0;
 }
 
 bool TransportClock::isRunning() const noexcept {
@@ -34,18 +36,25 @@ bool TransportClock::isRunning() const noexcept {
 }
 
 void TransportClock::advance(int numSamples, double sampleRate) noexcept {
-  if (!running || sampleRate <= 0.0) {
+  if (!running || sampleRate <= 0.0 || numSamples <= 0) {
     return;
   }
 
   const auto beatsPerSecond = bpm / 60.0;
-  const auto beatIncrement = static_cast<double>(numSamples) * (beatsPerSecond / sampleRate);
-  positionInBeats += beatIncrement;
+  positionInBeats += static_cast<double>(numSamples) * (beatsPerSecond / sampleRate);
 
-  // 16-step sequencer over one 4/4 bar -> 4 steps per beat.
-  const auto rawStep = static_cast<int>(std::floor(positionInBeats * 4.0));
-  const auto step = ((rawStep % 16) + 16) % 16;
-  currentStep = step;
+  constexpr double barLengthInBeats = 4.0;
+  constexpr double pairLengthInBeats = 0.5;
+  const auto barPos = std::fmod(positionInBeats, barLengthInBeats);
+  const auto safeBarPos = barPos < 0.0 ? barPos + barLengthInBeats : barPos;
+
+  const int pairIndex = static_cast<int>(safeBarPos / pairLengthInBeats);
+  const double pairPhase = safeBarPos - static_cast<double>(pairIndex) * pairLengthInBeats;
+
+  const double firstStepLength = 0.25 * (1.0 + swing);
+  const int stepInPair = (pairPhase < firstStepLength) ? 0 : 1;
+
+  currentStep = pairIndex * 2 + stepInPair;
 }
 
 int TransportClock::getCurrentStep() const noexcept {

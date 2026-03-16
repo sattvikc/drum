@@ -4,39 +4,47 @@ A JUCE-based software prototype inspired by the DATO Drum concept.
 
 ## Current status
 
-This repository now contains a runnable JUCE standalone application skeleton with:
+This repository contains:
 
-- A transport section (`Play`, `Stop`, `Tempo`, `Swing`)
-- A simple `TransportClock` implementation
-- A visual 8x16 drum-step grid with current-step highlighting
-- A modular structure to evolve toward a real sequencer and drum engine
+- A JUCE standalone UI prototype (`Play`, `Stop`, `Tempo`, `Swing`)
+- A `TransportClock` core class with step progression and basic swing behavior
+- A `SequencerEngine` core class for 8x16 lane/step state + velocity
+- A visual 8x16 grid with current-step highlighting
+- Click-to-toggle step editing directly on the grid
+- Core logic tests that can run without JUCE/network access
 
-## Build (standalone app)
+## Build
 
-### Requirements
+### 1) Build the core tests only (no JUCE fetch, works offline)
 
-- CMake 3.22+
-- C++20 compiler
-- Internet access on first configure (JUCE fetched from GitHub)
+```bash
+cmake -S . -B build-core -DDATODRUM_ENABLE_APP=OFF
+cmake --build build-core -j
+ctest --test-dir build-core --output-on-failure
+```
 
-### Commands
+### 2) Build the JUCE standalone app
 
 ```bash
 cmake -S . -B build
 cmake --build build -j
 ```
 
+> The first app configure requires internet access because JUCE is fetched via `FetchContent`.
+
 ## Project layout
 
-- `CMakeLists.txt` – JUCE app target and build config
-- `src/Main.cpp` – app and window bootstrap
+- `CMakeLists.txt` – build options for app and core tests
+- `src/Main.cpp` – app/window bootstrap
 - `include/drum/MainComponent.h` + `src/MainComponent.cpp` – prototype UI
-- `include/drum/TransportClock.h` + `src/TransportClock.cpp` – clock state and step progression
+- `include/drum/TransportClock.h` + `src/TransportClock.cpp` – tempo/swing/playhead clocking
+- `include/drum/SequencerEngine.h` + `src/SequencerEngine.cpp` – lane/step sequencing state
+- `tests/test_transport_and_sequencer.cpp` – core behavior checks
 
 ## Next implementation steps
 
-1. Move timing advancement from timer simulation into the real audio callback.
-2. Add `SequencerEngine` for lane/step state and lock-free trigger events.
-3. Add `DrumEngine` for sample voice playback and per-lane gain/pan.
-4. Replace static pattern drawing with editable step toggles.
+1. Move clock advancement into a real audio callback path.
+2. Emit sequencer trigger events from `TransportClock` + `SequencerEngine` integration.
+3. Add `DrumEngine` sample voice playback and per-lane gain/pan.
+4. Add per-step velocity editing and lane-level controls.
 5. Add project save/load for kits, patterns, tempo, and swing.

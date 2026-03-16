@@ -2,27 +2,25 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "drum/SequencerEngine.h"
 #include "drum/TransportClock.h"
 
 namespace drum {
 
 class MainComponent final : public juce::Component,
-                            private juce::Timer,
-                            private juce::Button::Listener,
-                            private juce::Slider::Listener {
+                            private juce::Timer {
 public:
   MainComponent();
 
   void paint(juce::Graphics& g) override;
   void resized() override;
+  void mouseDown(const juce::MouseEvent& event) override;
 
 private:
-  void timerCallback() override;
-  void buttonClicked(juce::Button* button) override;
-  void sliderValueChanged(juce::Slider* slider) override;
+  [[nodiscard]] juce::Rectangle<int> getGridArea() const;
+  [[nodiscard]] bool tryMapPositionToCell(juce::Point<int> position, int& laneOut, int& stepOut) const;
 
-  static constexpr int numRows {8};
-  static constexpr int numColumns {16};
+  void timerCallback() override;
 
   juce::TextButton playButton {"Play"};
   juce::TextButton stopButton {"Stop"};
@@ -30,8 +28,7 @@ private:
   juce::Slider swingSlider;
   juce::Label statusLabel;
 
-  bool grid[numRows][numColumns] {};
-
+  SequencerEngine sequencer;
   TransportClock clock;
 };
 
