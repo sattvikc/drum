@@ -45,14 +45,12 @@ MainComponent::MainComponent() {
 void MainComponent::paint(juce::Graphics& g) {
   g.fillAll(juce::Colour::fromRGB(16, 16, 24));
 
-  const auto bounds = getLocalBounds();
-  auto gridArea = bounds.reduced(20, 20);
-  gridArea.removeFromTop(90);
-
+  auto titleArea = getLocalBounds().removeFromTop(30);
   g.setColour(juce::Colours::white.withAlpha(0.9f));
   g.setFont(16.0f);
-  g.drawText("DATO Drum • JUCE Prototype", bounds.removeFromTop(30), juce::Justification::centred);
+  g.drawText("DATO Drum • JUCE Prototype", titleArea, juce::Justification::centred);
 
+  auto gridArea = getGridArea();
   const int cellW = std::max(1, gridArea.getWidth() / SequencerEngine::numSteps);
   const int cellH = std::max(1, gridArea.getHeight() / SequencerEngine::numLanes);
 
@@ -88,6 +86,45 @@ void MainComponent::resized() {
   tempoSlider.setBounds(controls.removeFromLeft(320).reduced(4));
   swingSlider.setBounds(controls.removeFromLeft(320).reduced(4));
   statusLabel.setBounds(controls.reduced(4));
+}
+
+void MainComponent::mouseDown(const juce::MouseEvent& event) {
+  int lane = 0;
+  int step = 0;
+  if (!tryMapPositionToCell(event.getPosition(), lane, step)) {
+    return;
+  }
+
+  const bool enabled = sequencer.isStepEnabled(lane, step);
+  sequencer.setStepEnabled(lane, step, !enabled);
+  if (!enabled) {
+    sequencer.setStepVelocity(lane, step, 100);
+  }
+
+  repaint();
+}
+
+juce::Rectangle<int> MainComponent::getGridArea() const {
+  auto area = getLocalBounds().reduced(20, 20);
+  area.removeFromTop(90);
+  return area;
+}
+
+bool MainComponent::tryMapPositionToCell(juce::Point<int> position, int& laneOut, int& stepOut) const {
+  const auto gridArea = getGridArea();
+  if (!gridArea.contains(position)) {
+    return false;
+  }
+
+  const auto relativeX = position.x - gridArea.getX();
+  const auto relativeY = position.y - gridArea.getY();
+
+  const int cellW = std::max(1, gridArea.getWidth() / SequencerEngine::numSteps);
+  const int cellH = std::max(1, gridArea.getHeight() / SequencerEngine::numLanes);
+
+  stepOut = std::clamp(relativeX / cellW, 0, SequencerEngine::numSteps - 1);
+  laneOut = std::clamp(relativeY / cellH, 0, SequencerEngine::numLanes - 1);
+  return true;
 }
 
 void MainComponent::timerCallback() {

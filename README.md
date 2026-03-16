@@ -10,6 +10,7 @@ This repository contains:
 - A `TransportClock` core class with step progression and basic swing behavior
 - A `SequencerEngine` core class for 8x16 lane/step state + velocity
 - A visual 8x16 grid with current-step highlighting
+- Click-to-toggle step editing directly on the grid
 - Core logic tests that can run without JUCE/network access
 
 ## Build
@@ -45,5 +46,5 @@ cmake --build build -j
 1. Move clock advancement into a real audio callback path.
 2. Emit sequencer trigger events from `TransportClock` + `SequencerEngine` integration.
 3. Add `DrumEngine` sample voice playback and per-lane gain/pan.
-4. Make grid cells editable with mouse interaction.
+4. Add per-step velocity editing and lane-level controls.
 5. Add project save/load for kits, patterns, tempo, and swing.
